@@ -8,10 +8,9 @@ ti.init(arch=ti.cpu)
 simulation_length = 20000
 num_simulations = 50000
 
-population = ti.field(dtype=ti.f32, shape=(num_simulations, simulation_length))
+population = ti.field(dtype=ti.math.vec2, shape=(num_simulations, simulation_length))
 
 arr_type = ti.types.ndarray(ndim=1)
-
 
 @ti.kernel
 def paint(r_values: arr_type):
@@ -25,7 +24,7 @@ def main():
     print("Hello from imaginary-bifurcations!")
 
     for i in range(num_simulations):
-        population[i, 0] = 0.5
+        population[i, 0] = ti.math.vec2(0.5, 0)
     r = np.linspace(0.2, 1, num_simulations, dtype=np.float32)
     # r = 1 - np.logspace(0, 0.8, num_simulations, dtype=np.float32)
     paint(r_values=r)
