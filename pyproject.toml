@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.10.1",
+    "numba>=0.61.2",
     "taichi>=1.7.3",
 ]
