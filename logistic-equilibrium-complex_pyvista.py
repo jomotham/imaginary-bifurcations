@@ -4,8 +4,8 @@ import pyvista as pv
 
 simulation_length = 5000
 
-equilibrium_resolution = 50
-num_simulations = 500
+equilibrium_resolution = 5
+num_simulations = 800
 
 population = np.zeros(
     dtype=np.complex64, shape=(num_simulations, num_simulations, equilibrium_resolution)
@@ -17,14 +17,11 @@ def paint(population, r_real, r_imag):
     for idx in prange(r_real.size * r_imag.size):
         i = idx % r_real.size
         j = idx // r_real.size
-        r = r_real[i] + 1j * r_imag[j]
+        r = 4 * (r_real[i] + 1j * r_imag[j])
         for k in range(simulation_length):
             size = equilibrium_resolution
-            population[i, j, (k + 1) % size] = (
-                4 * r * population[i, j, k % size] * (1 - population[i, j, k % size])
-            )
-            # if not np.isfinite(population[i, j, (k + 1) % size]):
-            #    break
+            value = r * population[i, j, k % size] * (1 - population[i, j, k % size])
+            population[i, j, (k + 1) % size] = value
 
     return population
 
@@ -47,16 +44,34 @@ def main():
     stacked = np.stack([grid_re, grid_im, np.abs(population)], axis=3)
 
     coords = np.reshape(stacked, (-1, 3))
+    phases = np.reshape(np.angle(population), (-1, 1))
 
-    print(coords, coords.shape)
+    highlight = grid_pop
+    highlight[:, :, 2:] = 0
+    highlight = np.reshape(highlight, (-1, 1))
+
+    print(coords.shape)
 
     pl = pv.Plotter()
     pl.show_axes()
+    print("Making mesh")
     mesh = pv.PolyData(coords)
     mesh.point_data["height"] = coords[:, 2]
-    pl.add_mesh(mesh, scalars="height")
+    mesh.point_data["angles"] = phases
+    mesh.point_data["highlight"] = highlight
+    print("Inserting mesh")
+    pl.add_mesh(mesh, scalars="angles")
+    # pl.show_bounds()
+    pl.show(auto_close=False)
 
-    pl.show()
+    print("Creating gif")
+    viewup = [0.5, 0.5, 1]
+    path = pl.generate_orbital_path(
+        factor=2.0, shift=mesh.length, viewup=viewup, n_points=36
+    )
+    pl.open_gif("orbit.gif")
+    pl.orbit_on_path(path, write_frames=True, viewup=[0, 0, 1], step=0.05)
+    pl.close()
 
 
 if __name__ == "__main__":
