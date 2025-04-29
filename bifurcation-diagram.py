@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 # ti.init(arch=ti.gpu)
 ti.init(arch=ti.cpu)
 
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "newcent",
+    'font.size': 25
+})
+
 simulation_length = 20000
 num_simulations = 50000
 
@@ -34,13 +40,13 @@ def main():
     fig, ax = plt.subplots()
 
     pop = population.to_numpy()
-    ax.plot(r, pop[:, -50:], ".", ms=0.1)
+    ax.plot(r, pop[:, -50:], ".", ms=0.025, c='black', alpha=1)
 
     ax.set_xlabel("$r$ value")
     ax.set_ylabel("Equilibrium value(s)")
+    ax.set_title("Logisitc Map Bifurcation Diagram")
 
     plt.show()
-
 
 if __name__ == "__main__":
     main()

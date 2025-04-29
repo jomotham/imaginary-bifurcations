@@ -1,5 +1,12 @@
 import taichi as ti
 import matplotlib.pyplot as plt
+import numpy as np
+
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "newcent",
+})
+
 
 ti.init(arch=ti.gpu)
 
@@ -17,12 +24,19 @@ def paint(r: float):
 def main():
     print("Hello from imaginary-bifurcations!")
 
-    population[0] = 0.1
-    paint(0.7)
+    population[0] = 0.5
+    paint(0.7) # single equilibrium value
+    #paint(0.755) # two eq. values
 
     fig, ax = plt.subplots()
 
-    ax.plot(population.to_numpy(), ".")
+    plt.axhline(0.6428572, c="gray", ls = ":")
+    ax.plot(population.to_numpy(), ".-")
+    ax.set_xlabel(r"\bf{Generation}")
+    ax.set_ylabel(r"\bf{Population Proportion}")
+    
+    #plt.yticks(np.linspace(0.5, 0.7, 5))
+    #ax.set_xscale("log")
 
     plt.show()
 
