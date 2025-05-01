@@ -8,12 +8,21 @@ from dataclasses import dataclass
 @njit(parallel=True)
 def paint(population, r_real, r_imag, simulation_length):
     for idx in prange(r_real.size * r_imag.size):
+        # i = idx // r_real.size
+        # j = idx % r_real.size
         i = idx % r_real.size
         j = idx // r_real.size
-        r = 4 * (r_real[i] + 1j * r_imag[j])
+        r = r_real[i] + 1j * r_imag[j]
         for k in range(simulation_length):
             size = population.shape[2]
-            value = r * population[i, j, k % size] * (1 - population[i, j, k % size])
+            x_n = population[i, j, k % size]
+
+            z = r * (1 / 2 - x_n)
+            c = r / 2 * (1 - r / 2)
+
+            value = z**2 + c
+
+            # value = r  # 4 * r * x_n * (1 - x_n)
             population[i, j, (k + 1) % size] = value
 
     return population
@@ -66,7 +75,7 @@ def create_mesh(params: Parameters, population: np.ndarray):
         r_re, r_im, np.arange(params.equilibrium_resolution)
     )
 
-    stacked = np.stack([grid_re, grid_im, np.abs(population)], axis=3)
+    stacked = np.stack([grid_re, grid_im, np.real(population)], axis=3)
 
     coords = np.reshape(stacked, (-1, 3))
 
@@ -85,18 +94,18 @@ def create_mesh(params: Parameters, population: np.ndarray):
     return mesh
 
 
-def main():
+if __name__ == "__main__":
     print("Hello from imaginary-bifurcations!")
 
     params = Parameters(
         simulation_length=5000,
         equilibrium_resolution=5,
-        num_simulations=800,
+        num_simulations=500,
     )
 
     params._Parameters__r = (
-        np.linspace(-0.5, 1, params.num_simulations),
-        np.linspace(-0.5, 0.5, params.num_simulations),
+        np.linspace(-2, 2, params.num_simulations),
+        np.linspace(-2, 2, params.num_simulations),
     )
     print(params)
 
@@ -108,7 +117,12 @@ def main():
 
     print("Inserting mesh")
     pl.add_mesh(mesh, scalars="angles", name="mymesh")
-    # pl.show_bounds()
+    pl.show_bounds(
+        location="outer",
+        xtitle="real",
+        ytitle="imaginary",
+        ztitle="equilibrium value",
+    )
     pl.show()
 
     # print("Creating gif")
@@ -120,6 +134,4 @@ def main():
     # pl.orbit_on_path(path, write_frames=True, viewup=[0, 0, 1], step=0.05)
     # pl.close()
 
-
-if __name__ == "__main__":
-    main()
+    pl.app.exec_()
