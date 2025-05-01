@@ -35,7 +35,7 @@ def main():
 
     population[..., 0] = 0.5
     r_re = np.linspace(-0.5, 1, num_simulations)
-    r_im = np.linspace(-0.5, 0.5, num_simulations)
+    r_im = np.linspace(-0.3, 0.3, num_simulations)
     # print(r.shape, r)
     print("Yay")
     # r = 1 - np.logspace(0, 0.8, num_simulations, dtype=np.float32)
@@ -60,7 +60,7 @@ def main():
         for i, line in enumerate(lines):
             line.set_ydata(np.abs(population[:, n, i]))
         ax.autoscale(True)
-        title = ax.set_title(f"im(r) = {r_im[n]}")  # update the plot title
+        title = ax.set_title(f"im(r) = {'{:.5f}'.format(r_im[n])}")  # update the plot title
         return (line, title)  # return the Artists that have changed
 
     ani = FuncAnimation(fig, frame, range(1, num_simulations), interval=100, blit=True)

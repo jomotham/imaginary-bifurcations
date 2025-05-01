@@ -36,7 +36,7 @@ def main():
 
     population[..., 0] = 0.5
     r_re = np.linspace(-0.5, 1, num_simulations)
-    r_im = np.linspace(-0.5, 0.5, num_simulations)
+    r_im = np.linspace(-0.3, 0.3, num_simulations)
 
     print("Yay")
     paint(population, r_re, r_im)
@@ -44,7 +44,7 @@ def main():
 
     fig, ax = plt.subplots()
 
-    print(population[:, 450, 0])
+    #print(population[:, 450, 0])
 
     image = ax.matshow(np.abs(population[:, :, 0]))
 
@@ -56,7 +56,7 @@ def main():
     ani = FuncAnimation(
         fig, frame, range(1, equilibrium_resolution), interval=100, blit=True
     )
-    ani.save("slice2.gif", fps=30, dpi=100)
+    ani.save("slice1.gif", fps=30, dpi=100)
 
     pl = pv.Plotter()
     pl.show_axes()
