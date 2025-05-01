@@ -11,9 +11,8 @@ def paint(population, simulation_length):
         r = 4 * (population[idx, 0, 0] + 1j * population[idx, 1, 0])
         for k in range(simulation_length):
             size = population.shape[2]
-            value = (
-                r * population[idx, 2, k % size] * (1 - population[idx, 2, k % size])
-            )
+            x_n = population[idx, 2, k % size]
+            value = r * x_n * (1 - x_n)
             population[idx, 2, (k + 1) % size] = value
 
     return population
@@ -55,13 +54,14 @@ def create_mesh(params: Parameters, population: np.ndarray):
     real_coords = coords.view(np.float64)
     strided_view = real_coords[:, 0:-1:2]
     print(real_coords.shape, strided_view.shape)
-    abs_coords = np.real(coords)
+    abs_coords = np.abs(coords)
     print(abs_coords.shape)
 
     phases = np.angle(coords[:, 2])
+    print(np.real(coords))
 
     print("Making mesh")
-    mesh = pv.PolyData(abs_coords)
+    mesh = pv.PolyData(np.abs(coords))
     # mesh.point_data["height"] = coords[:, 2]
     mesh.point_data["angles"] = phases
 
@@ -74,7 +74,7 @@ def main():
     params = Parameters(
         simulation_length=5000,
         equilibrium_resolution=6,
-        num_simulations=10,
+        num_simulations=20,
     )
 
     params._Parameters__r = (
@@ -87,7 +87,7 @@ def main():
 
     r_re, r_im = params.r
     print("Yay")
-    # paint(population, r_re, r_im, params.simulation_length)
+    paint(population, params.simulation_length)
     print("Finished calculations")
 
     # population = simulate(params)
