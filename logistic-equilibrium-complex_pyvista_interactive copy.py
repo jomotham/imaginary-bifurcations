@@ -30,19 +30,22 @@ class Parameters:
     simulation_length: int
     equilibrium_resolution: int
     num_simulations: int
-
-    __r: tuple[np.ndarray, np.ndarray] = None
+    limits: tuple[complex, complex]
 
     @property
-    def r(self) -> tuple[np.ndarray, np.ndarray]:
-        return self.__r
+    def r_real(self):
+        return np.linspace(*np.real(self.limits), self.num_simulations)
+
+    @property
+    def r_imag(self):
+        return np.linspace(*np.imag(self.limits), self.num_simulations)
 
 
 def create_buffer(params: Parameters):
-    r_re, r_im = params.r
-
     grid_re, grid_im, grid_pop = np.meshgrid(
-        r_re, r_im, np.zeros(shape=(params.equilibrium_resolution,), dtype=np.complex64)
+        params.r_real,
+        params.r_imag,
+        np.zeros(shape=(params.equilibrium_resolution,), dtype=np.complex64),
     )
 
     population = np.stack([grid_re, grid_im, grid_pop], axis=2)
@@ -66,7 +69,6 @@ def create_mesh(params: Parameters, population: np.ndarray):
     # print(real_coords.shape, strided_view.shape)
     print(coords.shape)
 
-    print("Making mesh")
     mesh = pv.PolyData(np.real(coords))
     mesh.point_data["height"] = np.abs(coords[:, 2])
     mesh.point_data["angles"] = np.angle(coords[:, 2])
@@ -74,19 +76,29 @@ def create_mesh(params: Parameters, population: np.ndarray):
     return mesh
 
 
+def run_simulations(params: Parameters, plotter: pv.Plotter, id: str):
+    population = create_buffer(params)
+
+    for decimation in reversed(range(1, 50)):
+        decimated_population = population[::decimation]
+        decimated_population[..., 2, :] = 0.5
+
+        print("Yay")
+        start_time = time.perf_counter()
+        paint(decimated_population, params.simulation_length)
+        end_time = time.perf_counter()
+        print(f"Finished calculations in {(end_time - start_time) * 1000} ms")
+
+        mesh = create_mesh(params, decimated_population)
+
+        print("Inserting mesh")
+        plotter.add_mesh(mesh, scalars="angles", name=f"mymesh{decimation}{id}")
+        plotter.render()
+        plotter.app.processEvents()
+
+
 def main():
     print("Hello from imaginary-bifurcations!")
-
-    params = Parameters(
-        simulation_length=5000,
-        equilibrium_resolution=6,
-        num_simulations=500,
-    )
-
-    params._Parameters__r = (
-        np.linspace(-0.5, 1, params.num_simulations),
-        np.linspace(-0.5, 0.5, params.num_simulations),
-    )
 
     pl = BackgroundPlotter()
     pl.show_axes()
@@ -99,28 +111,18 @@ def main():
     pl.show()
     # print(params)
 
-    population = create_buffer(params)
+    params = Parameters(
+        simulation_length=5000,
+        equilibrium_resolution=6,
+        num_simulations=300,
+        limits=(-0.5 - 0.5j, 1 + 0.5j),
+    )
 
-    for i in reversed(range(1, 50)):
-        decimated_population = population[::i]
-        decimated_population[..., 2, :] = 0.5
+    run_simulations(params, pl, "base")
 
-        print("Yay")
-        start_time = time.perf_counter()
-        paint(decimated_population, params.simulation_length)
-        end_time = time.perf_counter()
-        print(f"Finished calculations in {(end_time - start_time) * 1000} ms")
+    params.limits = (0.5 - 0.5j, 1 + 0.5j)
 
-        # population = simulate(params)
-        # start_time = time.perf_counter()
-        mesh = create_mesh(params, decimated_population)
-        # end_time = time.perf_counter()
-        # print(f"Created mesh in {(end_time - start_time) * 1000} ms")
-
-        print("Inserting mesh")
-        pl.add_mesh(mesh, scalars="angles", name=f"mymesh{i}")
-        pl.render()
-        pl.app.processEvents()
+    run_simulations(params, pl, "run1")
 
     # print("Creating gif")
     # viewup = [0.5, 0.5, 1]
@@ -130,6 +132,7 @@ def main():
     # pl.open_gif("orbit.gif")
     # pl.orbit_on_path(path, write_frames=True, viewup=[0, 0, 1], step=0.05)
     # pl.close()
+    print("Yielding to eventloop")
     pl.app.exec_()
 
 
