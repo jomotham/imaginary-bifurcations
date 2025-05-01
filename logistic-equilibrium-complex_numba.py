@@ -5,6 +5,11 @@ from matplotlib.animation import FuncAnimation
 
 # ti.init(arch=ti.gpu)
 
+# plt.rcParams.update({
+#     "text.usetex": True,
+#     "font.family": "newcent",
+# })
+
 simulation_length = 10_000
 
 equilibrium_resolution = 50
@@ -34,7 +39,7 @@ def main():
     print("Hello from imaginary-bifurcations!")
 
     population[..., 0] = 0.5
-    r_re = np.linspace(-0.5, 1, num_simulations)
+    r_re = np.linspace(0.2, 1, num_simulations)
     r_im = np.linspace(-0.3, 0.3, num_simulations)
     # print(r.shape, r)
     print("Yay")
@@ -45,7 +50,7 @@ def main():
     fig, ax = plt.subplots()
     # ax = plt.figure().add_subplot(projection="3d")
 
-    print(population[:, 450, 0])
+    #print(population[:, 450, 0])
 
     # for index in np.ndindex(population.shape[:2]):
     #     samples = population[index]
@@ -54,13 +59,14 @@ def main():
     #     imag = np.real(r_im[index[1]]) * np.ones_like(samples)
     #     ax.plot(real, imag, np.abs(samples), ".", ms=2)
     # ax.plot(np.abs(population[:, 250, 1]), ".")
-    lines = ax.plot(np.abs(population[:, num_simulations // 2, :]), ".", ms=2)
+    lines = ax.plot(np.abs(population[:, num_simulations // 2, :]), ".", ms=0.5, c="black")
 
     def frame(n: int):
+        print(f"{round(n/num_simulations * 100, 1)}%")
         for i, line in enumerate(lines):
             line.set_ydata(np.abs(population[:, n, i]))
         ax.autoscale(True)
-        title = ax.set_title(f"im(r) = {'{:.5f}'.format(r_im[n])}")  # update the plot title
+        title = ax.set_title(f"$\\mathrm{{im}}(r)$ = {'{:.4f}'.format(r_im[n])}")  # update the plot title
         return (line, title)  # return the Artists that have changed
 
     ani = FuncAnimation(fig, frame, range(1, num_simulations), interval=100, blit=True)

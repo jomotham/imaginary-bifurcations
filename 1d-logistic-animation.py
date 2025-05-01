@@ -30,9 +30,6 @@ def main():
     ax.set_xlabel(r"\bf{Generation}")
     ax.set_ylabel(r"\bf{Population Proportion}")
     
-    #plt.yticks(np.linspace(0.5, 0.7, 5))
-    #ax.set_xscale("log")
-    np.set_printoptions(precision=3)
     def frame(n: float):
         print(n)
         r = n / frame_max
