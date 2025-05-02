@@ -10,12 +10,12 @@ import time
 @njit(parallel=True)
 def paint(population, simulation_length):
     for idx in prange(population.shape[0]):
-        sim_arr = population[idx, 2, :]
         r = population[idx, 0, 0] + 1j * population[idx, 1, 0]
+        sim_arr = population[idx, 2, :]
+        size = len(sim_arr)
         for k in range(simulation_length):
-            size = len(sim_arr)
             x_n = sim_arr[k % size]
-            value = 4 * r * x_n * (1 - x_n)
+            value = r * x_n * (1 - x_n)
             sim_arr[(k + 1) % size] = value
 
             if not np.isfinite(value):
@@ -76,14 +76,14 @@ def create_mesh(params: Parameters, population: np.ndarray):
     return mesh
 
 
-def run_simulations(params: Parameters, plotter: pv.Plotter, id: str):
+def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps: int):
     population = create_buffer(params)
 
-    for decimation in reversed(range(1, 50)):
+    for decimation in reversed(range(1, num_steps)):
         decimated_population = population[::decimation]
         decimated_population[..., 2, :] = 0.5
 
-        print("Yay")
+        print("Calculating...")
         start_time = time.perf_counter()
         paint(decimated_population, params.simulation_length)
         end_time = time.perf_counter()
@@ -92,8 +92,11 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str):
         mesh = create_mesh(params, decimated_population)
 
         print("Inserting mesh")
-        plotter.add_mesh(mesh, scalars="angles", name=f"mymesh{decimation}{id}")
+        plotter.add_mesh(
+            mesh, scalars="height", name=f"mymesh{decimation}{id}", cmap="gist_earth"
+        )
         plotter.render()
+        plotter.write_frame()
         plotter.app.processEvents()
 
 
@@ -108,21 +111,23 @@ def main():
         ytitle="imaginary",
         ztitle="equilibrium value",
     )
+    pl.enable_parallel_projection()
     pl.show()
+    pl.open_gif("points.gif")
     # print(params)
 
     params = Parameters(
         simulation_length=5000,
         equilibrium_resolution=6,
-        num_simulations=300,
-        limits=(-0.5 - 0.5j, 1 + 0.5j),
+        num_simulations=800,
+        limits=((-2 - 2j), (4 + 2j)),
     )
 
-    run_simulations(params, pl, "base")
+    run_simulations(params, pl, "base", num_steps=2)
 
-    params.limits = (0.5 - 0.5j, 1 + 0.5j)
-
-    run_simulations(params, pl, "run1")
+    params.limits = ((3 - 0.5j), (4 + 0.5j))
+    params.equilibrium_resolution = 50
+    run_simulations(params, pl, "run1", num_steps=10)
 
     # print("Creating gif")
     # viewup = [0.5, 0.5, 1]
@@ -134,6 +139,9 @@ def main():
     # pl.close()
     print("Yielding to eventloop")
     pl.app.exec_()
+    print("Saving gif")
+
+    pl.close()
 
 
 if __name__ == "__main__":
