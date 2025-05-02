@@ -4,6 +4,8 @@ import pyvista as pv
 from pyvistaqt import BackgroundPlotter
 from dataclasses import dataclass
 
+import time
+
 
 @njit(parallel=True)
 def paint(population, r_real, r_imag, simulation_length):
@@ -17,12 +19,12 @@ def paint(population, r_real, r_imag, simulation_length):
             size = population.shape[2]
             x_n = population[i, j, k % size]
 
-            z = r * (1 / 2 - x_n)
-            c = r / 2 * (1 - r / 2)
+            # z = r * (1 / 2 - x_n)
+            # c = r / 2 * (1 - r / 2)
 
-            value = z**2 + c
+            # value = z**2 + c
 
-            # value = r  # 4 * r * x_n * (1 - x_n)
+            value = r * x_n * (1 - x_n)
             population[i, j, (k + 1) % size] = value
 
     return population
@@ -33,12 +35,15 @@ class Parameters:
     simulation_length: int
     equilibrium_resolution: int
     num_simulations: int
-
-    __r: tuple[np.ndarray, np.ndarray] = None
+    limits: tuple[complex, complex]
 
     @property
-    def r(self) -> tuple[np.ndarray, np.ndarray]:
-        return self.__r
+    def r_real(self):
+        return np.linspace(*np.real(self.limits), self.num_simulations)
+
+    @property
+    def r_imag(self):
+        return np.linspace(*np.imag(self.limits), self.num_simulations)
 
 
 def simulate(params: Parameters, population: np.ndarray):
@@ -59,20 +64,19 @@ def simulate(params: Parameters, population: np.ndarray):
         )
 
     population[..., 0] = 0.5
-    r_re, r_im = params.r
 
     print("Yay")
-    paint(population, r_re, r_im, params.simulation_length)
-    print("Finished calculations")
+    start_time = time.perf_counter()
+    paint(population, params.r_real, params.r_imag, params.simulation_length)
+    end_time = time.perf_counter()
+    print(f"Finished calculations in {(end_time - start_time) * 1000} ms")
 
     return population
 
 
 def create_mesh(params: Parameters, population: np.ndarray):
-    r_re, r_im = params.r
-
     grid_re, grid_im, grid_pop = np.meshgrid(
-        r_re, r_im, np.arange(params.equilibrium_resolution)
+        params.r_real, params.r_imag, np.arange(params.equilibrium_resolution)
     )
 
     stacked = np.stack([grid_re, grid_im, np.real(population)], axis=3)
@@ -99,14 +103,11 @@ if __name__ == "__main__":
 
     params = Parameters(
         simulation_length=5000,
-        equilibrium_resolution=5,
-        num_simulations=500,
+        equilibrium_resolution=6,
+        num_simulations=800,
+        limits=((-2 - 2j), (4 + 2j)),
     )
 
-    params._Parameters__r = (
-        np.linspace(-2, 2, params.num_simulations),
-        np.linspace(-2, 2, params.num_simulations),
-    )
     print(params)
 
     population = simulate(params, None)
