@@ -3,16 +3,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "newcent",
+    "mathtext.default": "it",
+    "mathtext.fontset": "cm",
+    "font.family": "Ebrima",
 })
 
 
 ti.init(arch=ti.gpu)
 
-n = 50
+n = 100
 population = ti.field(dtype=ti.f32, shape=(n,))
 
+r = 0.87
 
 @ti.kernel
 def paint(r: float):
@@ -25,19 +27,29 @@ def main():
     print("Hello from imaginary-bifurcations!")
 
     population[0] = 0.5
-    paint(0.7) # single equilibrium value
+    paint(r) # single equilibrium value
     #paint(0.755) # two eq. values
 
     fig, ax = plt.subplots()
 
-    plt.axhline(0.6428572, c="gray", ls = ":")
+    # plt.axhline(0.713, c="gray", ls = ":")
+    # plt.axhline(0.618, c="gray", ls = ":")
     ax.plot(population.to_numpy(), ".-")
-    ax.set_xlabel(r"\bf{Generation}")
-    ax.set_ylabel(r"\bf{Population Proportion}")
+    ax.set_xlabel("Generation")
+    ax.set_ylabel("Population Proportion")
+    ax.set_title(f"Logistic Map with $r={r}$")
     
     #plt.yticks(np.linspace(0.5, 0.7, 5))
     #ax.set_xscale("log")
 
+
+
+    plt.axhline(0.87, c="gray", ls = ":")
+    plt.axhline(0.833, c="gray", ls = ":")
+    plt.axhline(0.486, c="gray", ls = ":")
+    plt.axhline(0.394, c="gray", ls = ":")
+
+    plt.savefig("logi4eq.png", dpi=300)
     plt.show()
 
 

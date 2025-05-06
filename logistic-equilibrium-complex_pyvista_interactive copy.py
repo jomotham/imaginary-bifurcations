@@ -156,9 +156,9 @@ def main():
         )
 
         params = Parameters(
-            simulation_length=1000,
+            simulation_length=5000,
             equilibrium_resolution=50,
-            num_simulations=800,
+            num_simulations=1600,
             limits=bounds,
         )
 
