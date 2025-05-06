@@ -64,10 +64,13 @@ def create_mesh(params: Parameters, population: np.ndarray):
     # check that we haven't made a copy
     assert coords.base is not None
 
+    print(f"Calculated {coords.shape} points")
+    coords = coords[~np.isnan(coords[:, 2])]
+
     # real_coords = coords.view(np.float64)
     # strided_view = real_coords[:, 0:-1:2]
     # print(real_coords.shape, strided_view.shape)
-    print(coords.shape)
+    print(f"Created cloud of {coords.shape} points")
     out = np.clip(np.real(coords), -10, 10)
 
     mesh = pv.PolyData(out)
