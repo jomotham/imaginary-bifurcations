@@ -15,12 +15,19 @@ population = np.zeros(
 @njit(parallel=True)
 def paint(population, r_real, r_imag):
     for idx in prange(r_real.size * r_imag.size):
-        i = idx % r_real.size
-        j = idx // r_real.size
-        r = 4 * (r_real[i] + 1j * r_imag[j])
+        i = idx // r_real.size
+        j = idx % r_real.size
+        r = r_real[i] + 1j * r_imag[j]
         for k in range(simulation_length):
             size = equilibrium_resolution
-            value = r * population[i, j, k % size] * (1 - population[i, j, k % size])
+            x_n = population[i, j, k % size]
+
+            c = 0.5 * 4 * (1 - 0.5 * r)
+            value = x_n**2 + c
+
+            value = r
+            # value = r * x_n * (1 - x_n)
+
             population[i, j, (k + 1) % size] = value
 
     return population
@@ -30,8 +37,8 @@ def main():
     print("Hello from imaginary-bifurcations!")
 
     population[..., 0] = 0.5
-    r_re = np.linspace(-0.5, 1, num_simulations)
-    r_im = np.linspace(-0.5, 0.5, num_simulations)
+    r_re = np.linspace(-4, 2, num_simulations)
+    r_im = np.linspace(-2, 2, num_simulations)
 
     print("Yay")
     paint(population, r_re, r_im)
@@ -41,27 +48,27 @@ def main():
         r_re, r_im, np.arange(equilibrium_resolution)
     )
 
-    stacked = np.stack([grid_re, grid_im, np.abs(population)], axis=3)
+    stacked = np.stack([grid_re, grid_im, np.real(population)], axis=3)
 
     coords = np.reshape(stacked, (-1, 3))
     phases = np.reshape(np.angle(population), (-1, 1))
-
-    highlight = grid_pop
-    highlight[:, :, 2:] = 0
-    highlight = np.reshape(highlight, (-1, 1))
 
     print(coords.shape)
 
     pl = pv.Plotter()
     pl.show_axes()
+    pl.show_bounds(
+        location="outer",
+        xtitle="real",
+        ytitle="imaginary",
+        ztitle="equilibrium value",
+    )
     print("Making mesh")
     mesh = pv.PolyData(coords)
     mesh.point_data["height"] = coords[:, 2]
     mesh.point_data["angles"] = phases
-    mesh.point_data["highlight"] = highlight
     print("Inserting mesh")
     pl.add_mesh(mesh, scalars="angles")
-    # pl.show_bounds()
     pl.show(auto_close=False)
 
     print("Creating gif")

@@ -54,7 +54,7 @@ class Parameters:
 
 
 def create_buffer(params: Parameters):
-    """Create a list of coordinates sampling the imaginary plane
+    """Create a list of coordinates sampling the imaginary plane in a grid
 
     but make it deep in the last dimension as scratch space to run the simulation
     """
@@ -77,7 +77,7 @@ def create_buffer(params: Parameters):
 
 def create_mesh(params: Parameters, population: np.ndarray):
     # flatten the simulation scratch space axis out so we have one long list of coordinates
-    coords = np.reshape(np.swapaxes(population, 1, 2), (-1, 3), copy=False)
+    coords = np.reshape(np.swapaxes(population, 1, 2), (-1, 3))
 
     print(f"Calculated {coords.shape} points")
 
