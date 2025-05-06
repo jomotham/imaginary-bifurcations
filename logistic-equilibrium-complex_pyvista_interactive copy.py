@@ -10,15 +10,27 @@ import time
 @njit(parallel=True)
 def paint(population, simulation_length):
     for idx in prange(population.shape[0]):
+        # logistic growth rate
         r = population[idx, 0, 0] + 1j * population[idx, 1, 0]
+
+        # our scratch space
         sim_arr = population[idx, 2, :]
+
         size = len(sim_arr)
         for k in range(simulation_length):
+            # we may want to simulate for more iterations than we want to save at the end,
+            # so use the scratch space as a circular buffer
             x_n = sim_arr[k % size]
-            value = r * x_n * (1 - x_n)
+
+            # quadratic map
+            c = 0.5 * 4 * (1 - 0.5 * r)
+            value = x_n**2 + c
+            # value = r * x_n * (1 - x_n)
+
             sim_arr[(k + 1) % size] = value
 
             if not np.isfinite(value):
+                # it's blown up so we don't need to spend more effort
                 sim_arr[:] = np.nan
                 break
 
@@ -42,6 +54,11 @@ class Parameters:
 
 
 def create_buffer(params: Parameters):
+    """Create a list of coordinates sampling the imaginary plane
+
+    but make it deep in the last dimension as scratch space to run the simulation
+    """
+
     grid_re, grid_im, grid_pop = np.meshgrid(
         params.r_real,
         params.r_imag,
@@ -53,27 +70,28 @@ def create_buffer(params: Parameters):
         population, shape=(-1, 3, params.equilibrium_resolution), copy=True
     )
 
-    print(population.shape)
+    print(f"Allocated buffer {population.shape}")
 
     return population
 
 
 def create_mesh(params: Parameters, population: np.ndarray):
-    # print(population, np.swapaxes(population, 1, 2).shape)
-    coords = np.reshape(np.swapaxes(population, 1, 2), (-1, 3))
-    # check that we haven't made a copy
-    assert coords.base is not None
+    # flatten the simulation scratch space axis out so we have one long list of coordinates
+    coords = np.reshape(np.swapaxes(population, 1, 2), (-1, 3), copy=False)
 
     print(f"Calculated {coords.shape} points")
+
+    # strip the nans before giving it to pyvista
     coords = coords[~np.isnan(coords[:, 2])]
 
-    # real_coords = coords.view(np.float64)
-    # strided_view = real_coords[:, 0:-1:2]
-    # print(real_coords.shape, strided_view.shape)
     print(f"Created cloud of {coords.shape} points")
+
+    # try to limit outliers that mess up our colormap
     out = np.clip(np.real(coords), -10, 10)
 
     mesh = pv.PolyData(out)
+
+    # populate "scalars" to use for the colormap
     mesh.point_data["height"] = np.abs(coords[:, 2])
     mesh.point_data["angles"] = np.angle(coords[:, 2])
 
@@ -84,11 +102,13 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps:
     population = create_buffer(params)
 
     for decimation in reversed(range(1, num_steps + 1)):
+        # create a strided view of the list of coordinates
         decimated_population = population[:: decimation**2]
         decimated_population[..., 2, :] = 0.1
 
         print("Calculating...")
         start_time = time.perf_counter()
+        # run the simulation
         paint(decimated_population, params.simulation_length)
         end_time = time.perf_counter()
         print(f"Finished calculations in {(end_time - start_time) * 1000} ms")
@@ -97,11 +117,15 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps:
 
         print("Inserting mesh")
         plotter.add_mesh(
-            mesh, scalars="height", name=f"mymesh{decimation}{id}", cmap="gist_earth"
+            mesh,
+            scalars="height",
+            name=f"mymesh{decimation}{id}",  # pyvista will deduplicate meshes with the same name
+            cmap="gist_earth",
+            opacity=0.2,
         )
 
         plotter.render()
-        # plotter.write_frame()
+        # plotter.write_frame() # write to the gif
         plotter.app.processEvents()
 
 
@@ -120,7 +144,6 @@ def main():
     pl.show()
     pl.open_gif("points.gif")
     pl.enable_fly_to_right_click()
-    # print(params)
 
     def bounds_callback(box):
         print(
