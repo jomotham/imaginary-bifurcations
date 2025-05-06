@@ -10,9 +10,11 @@ import time
 @njit(parallel=True)
 def paint(population, simulation_length):
     for idx in prange(population.shape[0]):
-        r = population[idx, 0, 0] + 1j * population[idx, 1, 0]
+        x_0 = population[idx, 0, 0] + 1j * population[idx, 1, 0]
+        r = 1.5
         sim_arr = population[idx, 2, :]
         size = len(sim_arr)
+        sim_arr[:] = x_0
         for k in range(simulation_length):
             x_n = sim_arr[k % size]
             value = r * x_n * (1 - x_n)
@@ -81,7 +83,7 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps:
 
     for decimation in reversed(range(1, num_steps)):
         decimated_population = population[:: decimation**2]
-        decimated_population[..., 2, :] = 0.1
+        decimated_population[..., 2, :] = 0.5
 
         print("Calculating...")
         start_time = time.perf_counter()
@@ -97,7 +99,7 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps:
         )
 
         plotter.render()
-        # plotter.write_frame()
+        plotter.write_frame()
         plotter.app.processEvents()
 
 
@@ -115,38 +117,20 @@ def main():
     pl.enable_parallel_projection()
     pl.show()
     pl.open_gif("points.gif")
-    pl.enable_fly_to_right_click()
     # print(params)
-
-    def bounds_callback(box):
-        x_min, x_max, y_min, y_max = box.bounds
-        bounds = ()
-        print(
-            box,
-            box.bounds,
-        )
-
-    pl.add_box_widget(callback=bounds_callback, rotation_enabled=False)
 
     params = Parameters(
         simulation_length=5000,
         equilibrium_resolution=6,
-        num_simulations=200,  # 800,
+        num_simulations=800,
         limits=((-2 - 2j), (4 + 2j)),
     )
 
-    # run_simulations(params, pl, "base", num_steps=10)
+    run_simulations(params, pl, "base", num_steps=2)
 
-    params.limits = ((3 - 0.5j), (4 + 0.5j))
-    params.equilibrium_resolution = 50
-    run_simulations(params, pl, "run1", num_steps=3)
-
-    params.limits = ((3.8 - 0.1j), (3.9 + 0.1j))
-    run_simulations(params, pl, "run2", num_steps=3)
-
-    center = np.mean(params.limits)
-    pl.fly_to((np.real(center), np.imag(center), 1))
-    pl.fly_to((3.58355, 0, 0.9))
+    # params.limits = ((3 - 0.5j), (4 + 0.5j))
+    # params.equilibrium_resolution = 50
+    # run_simulations(params, pl, "run1", num_steps=10)
 
     # print("Creating gif")
     # viewup = [0.5, 0.5, 1]

@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     params = Parameters(
         simulation_length=5000,
-        equilibrium_resolution=6,
+        equilibrium_resolution=50,
         num_simulations=800,
         limits=((-2 - 2j), (4 + 2j)),
     )
@@ -113,11 +113,16 @@ if __name__ == "__main__":
     population = simulate(params, None)
     mesh = create_mesh(params, population)
 
+    grid = pv.ImageData()
+    grid.dimensions = np.array(population.shape) + 1
+    grid.cell_data["values"] = np.real(population).flatten(order="F")
+
     pl = BackgroundPlotter()
     pl.show_axes()
 
     print("Inserting mesh")
-    pl.add_mesh(mesh, scalars="angles", name="mymesh")
+    # pl.add_mesh(mesh, scalars="angles", name="mymesh")
+    pl.add_volume(grid)
     pl.show_bounds(
         location="outer",
         xtitle="real",
