@@ -68,8 +68,9 @@ def create_mesh(params: Parameters, population: np.ndarray):
     # strided_view = real_coords[:, 0:-1:2]
     # print(real_coords.shape, strided_view.shape)
     print(coords.shape)
+    out = np.clip(np.real(coords), -10, 10)
 
-    mesh = pv.PolyData(np.real(coords))
+    mesh = pv.PolyData(out)
     mesh.point_data["height"] = np.abs(coords[:, 2])
     mesh.point_data["angles"] = np.angle(coords[:, 2])
 
@@ -79,7 +80,7 @@ def create_mesh(params: Parameters, population: np.ndarray):
 def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps: int):
     population = create_buffer(params)
 
-    for decimation in reversed(range(1, num_steps)):
+    for decimation in reversed(range(1, num_steps + 1)):
         decimated_population = population[:: decimation**2]
         decimated_population[..., 2, :] = 0.1
 
@@ -119,34 +120,51 @@ def main():
     # print(params)
 
     def bounds_callback(box):
-        x_min, x_max, y_min, y_max = box.bounds
-        bounds = ()
         print(
             box,
             box.bounds,
         )
+        bounds = (
+            box.bounds.x_min + 1j * box.bounds.y_min,
+            box.bounds.x_max + 1j * box.bounds.y_max,
+        )
 
-    pl.add_box_widget(callback=bounds_callback, rotation_enabled=False)
+        params = Parameters(
+            simulation_length=1000,
+            equilibrium_resolution=50,
+            num_simulations=800,
+            limits=bounds,
+        )
 
-    params = Parameters(
-        simulation_length=5000,
-        equilibrium_resolution=6,
-        num_simulations=200,  # 800,
-        limits=((-2 - 2j), (4 + 2j)),
+        run_simulations(params, pl, "run3", num_steps=1)
+
+        pl.fly_to(box.center)
+
+    pl.add_box_widget(
+        callback=bounds_callback,
+        rotation_enabled=False,
+        bounds=(-2, 4, -2, 2, -1, 1),
     )
+
+    # params = Parameters(
+    #     simulation_length=5000,
+    #     equilibrium_resolution=6,
+    #     num_simulations=200,  # 800,
+    #     limits=((-2 - 2j), (4 + 2j)),
+    # )
 
     # run_simulations(params, pl, "base", num_steps=10)
 
-    params.limits = ((3 - 0.5j), (4 + 0.5j))
-    params.equilibrium_resolution = 50
-    run_simulations(params, pl, "run1", num_steps=3)
+    # params.limits = ((3 - 0.5j), (4 + 0.5j))
+    # params.equilibrium_resolution = 50
+    # run_simulations(params, pl, "run1", num_steps=3)
 
-    params.limits = ((3.8 - 0.1j), (3.9 + 0.1j))
-    run_simulations(params, pl, "run2", num_steps=3)
+    # params.limits = ((3.8 - 0.1j), (3.9 + 0.1j))
+    # run_simulations(params, pl, "run2", num_steps=3)
 
-    center = np.mean(params.limits)
-    pl.fly_to((np.real(center), np.imag(center), 1))
-    pl.fly_to((3.58355, 0, 0.9))
+    # center = np.mean(params.limits)
+    # pl.fly_to((np.real(center), np.imag(center), 1))
+    # pl.fly_to((3.58355, 0, 0.9))
 
     # print("Creating gif")
     # viewup = [0.5, 0.5, 1]
