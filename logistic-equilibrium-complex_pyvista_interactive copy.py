@@ -3,6 +3,7 @@ import numpy as np
 import pyvista as pv
 from pyvistaqt import BackgroundPlotter
 from dataclasses import dataclass
+from pygifsicle import optimize
 
 import time
 
@@ -23,13 +24,15 @@ def paint(population, simulation_length):
             x_n = sim_arr[k % size]
 
             # quadratic map
-            # c = 0.5 * r * (1 - 0.5 * r)
+            c = 0.5 * r * (1 - 0.5 * r)
             # z_n = r * (1 / 2 - x_n)
             # z_n1 = z_n**2 + c
             # value = 1 / 2 - z_n1 / r
-            value = x_n**2 + r
+            # value = x_n**2 + r
+            # value = x_n**2 + c
 
-            # value = r * x_n * (1 - x_n)
+            # logistic map
+            value = r * x_n * (1 - x_n)
 
             sim_arr[(k + 1) % size] = value
 
@@ -114,7 +117,7 @@ def run_simulations(
     for decimation in reversed(range(0, num_steps)):
         # create a strided view of the list of coordinates
         decimated_population = population[:: 10**decimation]
-        decimated_population[..., 2, :] = 0.5
+        decimated_population[..., 2, :] = 0.1
 
         print("Calculating...")
         start_time = time.perf_counter()
@@ -214,12 +217,36 @@ def create_flying_gif():
         limits=((-2 - 2j), (4 + 2j)),
     )
 
-    run_simulations(params, pl, "base", num_steps=1, opacity=0.2)
+    scalar_bar_args = dict(
+        # height=0.25,
+        title="color=|z|",
+        title_font_size=24,
+        vertical=True,
+        # position_x=0.05,
+        # position_y=0.05,
+    )
+
+    run_simulations(
+        params,
+        pl,
+        "base",
+        num_steps=1,
+        cmap="gist_earth",
+        opacity=0.2,
+        scalar_bar_args=scalar_bar_args,
+    )
 
     params.limits = ((-2 + 0), (4 + 0))
     params.equilibrium_resolution = 50
     params.num_simulations = (800, 1)
-    run_simulations(params, pl, "real", num_steps=1, opacity=0.5, color="black")
+    run_simulations(
+        params,
+        pl,
+        "real",
+        num_steps=1,
+        opacity=0.5,
+        color="black",
+    )
 
     # run_simulations(params, pl, "run1", num_steps=3)
 
@@ -233,7 +260,7 @@ def create_flying_gif():
     # pl.camera.zoom("tight")
     pl.enable_parallel_projection()
     # pl.show_axes()
-    pl.remove_scalar_bar()
+    # pl.remove_scalar_bar()
     pl.show_bounds(
         location="outer",
         xtitle="real",
@@ -259,9 +286,8 @@ def create_flying_gif():
         [np.zeros_like(angle), -np.sin(angle), np.cos(angle)], axis=1
     )
 
-    print(trajectory)
-
-    pl.open_gif("Figures/bifurcation_to_mandelbrot_tilt.gif")
+    gif_path = "Figures/bifurcation_to_mandelbrot_tilt.gif"
+    pl.open_gif(gif_path)
 
     pl.set_position(trajectory[0], render=False)
     pl.set_focus(focus, render=False)
@@ -281,6 +307,9 @@ def create_flying_gif():
         pl.write_frame()
 
     pl.mwriter.close()
+
+    print("Optimizing gif")
+    optimize(gif_path)
 
 
 if __name__ == "__main__":
