@@ -3,10 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-# plt.rcParams.update({
-#     "text.usetex": True,
-#     "font.family": "newcent",
-# })
+plt.rcParams.update({
+    "mathtext.default": "it",
+    "mathtext.fontset": "cm",
+    "font.family": "Ebrima",
+})
 
 simulation_length = 10_000
 
@@ -27,7 +28,7 @@ def paint(population, r_real, r_imag):
         for k in range(simulation_length):
             size = equilibrium_resolution
             population[i, j, (k + 1) % size] = (
-                4 * r * population[i, j, k % size] * (1 - population[i, j, k % size])
+                r * population[i, j, k % size] * (1 - population[i, j, k % size])
             )
 
     return population
@@ -37,8 +38,8 @@ def main():
     print("Hello from imaginary-bifurcations!")
 
     population[..., 0] = 0.5
-    r_re = np.linspace(0.2, 1, num_simulations)
-    r_im = np.linspace(-0.3, 0.3, num_simulations)
+    r_re = np.linspace(0.8, 4, num_simulations)
+    r_im = np.linspace(-1.2, 1.2, num_simulations)
 
     print("Yay")
     paint(population, r_re, r_im)
@@ -58,12 +59,12 @@ def main():
             line.set_ydata(np.abs(population[:, n, i]))
         ax.autoscale(True)
         title = ax.set_title(
-            f"$\\mathrm{{im}}(r)$ = {'{:.4f}'.format(r_im[n])}"
+            f"$\\mathrm{{im}}(r) = {'{:.4f}'.format(r_im[n])}$"
         )  # update the plot title
         return (line, title)  # return the Artists that have changed
 
     ani = FuncAnimation(fig, frame, range(1, num_simulations), interval=100, blit=True)
-    ani.save("slice_through_imaginary_axis.gif", fps=30, dpi=100)
+    ani.save("slice_through_imaginary_axis.gif", fps=30, dpi=300)
 
 
 if __name__ == "__main__":
