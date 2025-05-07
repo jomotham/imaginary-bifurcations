@@ -101,9 +101,9 @@ def create_mesh(params: Parameters, population: np.ndarray):
 def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps: int):
     population = create_buffer(params)
 
-    for decimation in reversed(range(1, num_steps + 1)):
+    for decimation in reversed(range(0, num_steps)):
         # create a strided view of the list of coordinates
-        decimated_population = population[:: decimation**2]
+        decimated_population = population[:: 10**decimation]
         decimated_population[..., 2, :] = 0.1
 
         print("Calculating...")
@@ -119,30 +119,30 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps:
         plotter.add_mesh(
             mesh,
             scalars="height",
-            name=f"mymesh{decimation}{id}",  # pyvista will deduplicate meshes with the same name
+            name=f"mymesh{id}",  # pyvista will deduplicate meshes with the same name
             cmap="gist_earth",
             opacity=0.2,
         )
 
         plotter.render()
         # plotter.write_frame() # write to the gif
-        plotter.app.processEvents()
+        # plotter.app.processEvents()
 
 
-def main():
+def interactive():
     print("Hello from imaginary-bifurcations!")
 
     pl = BackgroundPlotter()
     pl.show_axes()
     pl.show_bounds(
-        location="outer",
+        location="back",
         xtitle="real",
         ytitle="imaginary",
         ztitle="equilibrium value",
     )
     pl.enable_parallel_projection()
     pl.show()
-    pl.open_gif("points.gif")
+    # pl.open_gif("points.gif")
     pl.enable_fly_to_right_click()
 
     def bounds_callback(box):
@@ -157,8 +157,8 @@ def main():
 
         params = Parameters(
             simulation_length=5000,
-            equilibrium_resolution=50,
-            num_simulations=1600,
+            equilibrium_resolution=10,
+            num_simulations=1500,
             limits=bounds,
         )
 
@@ -172,14 +172,24 @@ def main():
         bounds=(-2, 4, -2, 2, -1, 1),
     )
 
-    # params = Parameters(
-    #     simulation_length=5000,
-    #     equilibrium_resolution=6,
-    #     num_simulations=200,  # 800,
-    #     limits=((-2 - 2j), (4 + 2j)),
-    # )
+    print("Yielding to eventloop")
+    pl.app.exec_()
+    print("Saving gif")
 
-    # run_simulations(params, pl, "base", num_steps=10)
+    pl.close()
+
+
+def create_flying_gif():
+    pl = pv.Plotter(off_screen=True)
+
+    params = Parameters(
+        simulation_length=8000,
+        equilibrium_resolution=6,
+        num_simulations=2000,
+        limits=((-2 - 2j), (4 + 2j)),
+    )
+
+    run_simulations(params, pl, "base", num_steps=1)
 
     # params.limits = ((3 - 0.5j), (4 + 0.5j))
     # params.equilibrium_resolution = 50
@@ -192,20 +202,52 @@ def main():
     # pl.fly_to((np.real(center), np.imag(center), 1))
     # pl.fly_to((3.58355, 0, 0.9))
 
-    # print("Creating gif")
-    # viewup = [0.5, 0.5, 1]
-    # path = pl.generate_orbital_path(
-    #     factor=2.0, shift=mesh.length, viewup=viewup, n_points=36
-    # )
-    # pl.open_gif("orbit.gif")
-    # pl.orbit_on_path(path, write_frames=True, viewup=[0, 0, 1], step=0.05)
-    # pl.close()
-    print("Yielding to eventloop")
-    pl.app.exec_()
-    print("Saving gif")
+    pl.enable_parallel_projection()
+    pl.remove_scalar_bar()
+    pl.zoom_camera("tight")
+    pl.show_bounds(
+        location="outer",
+        xtitle="real",
+        ytitle="imaginary",
+        ztitle="equilibrium value",
+        use_3d_text=False,
+    )
 
-    pl.close()
+    print("Creating gif")
+
+    focus = [0, 0, 0]
+    point = [4, 0, 0]
+    viewup = [0, 0.1, 1]
+
+    angle = np.linspace(0, np.pi / 2, num=36)
+    trajectory = 4 * np.stack(
+        [np.zeros_like(angle), np.cos(angle), -np.sin(angle)], axis=1
+    )
+
+    print(trajectory)
+
+    pl.open_gif("orbit.gif")
+
+    pl.set_position(trajectory[0], render=False)
+    pl.set_focus(focus, render=False)
+    pl.set_viewup(viewup)
+
+    for _ in range(10):
+        pl.write_frame()
+
+    for point in trajectory:
+        print(point)
+        pl.set_position(point, render=False)
+        pl.set_focus(focus, render=False)
+        pl.set_viewup(viewup)
+        pl.write_frame()
+
+    for _ in range(10):
+        pl.write_frame()
+
+    pl.mwriter.close()
 
 
 if __name__ == "__main__":
-    main()
+    create_flying_gif()
+    # interactive()
