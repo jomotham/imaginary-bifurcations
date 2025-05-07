@@ -29,10 +29,10 @@ def paint(population, simulation_length):
             # z_n1 = z_n**2 + c
             # value = 1 / 2 - z_n1 / r
             # value = x_n**2 + r
-            # value = x_n**2 + c
+            value = x_n**2 + c
 
             # logistic map
-            value = r * x_n * (1 - x_n)
+            # value = r * x_n * (1 - x_n)
 
             sim_arr[(k + 1) % size] = value
 
@@ -222,6 +222,7 @@ def create_flying_gif():
         title="color=|z|",
         title_font_size=24,
         vertical=True,
+        position_y=0.3,
         # position_x=0.05,
         # position_y=0.05,
     )
