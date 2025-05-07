@@ -19,7 +19,7 @@ population = np.zeros(dtype=np.float32, shape=(n,))
 def paint(r: float):
     for _ in range(1):
         for i in range(n - 1):
-            population[i + 1] = 4 * r * population[i] * (1 - population[i])
+            population[i + 1] = r * population[i] * (1 - population[i])
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
     ax.set_ylabel("Population Proportion")
     
     def frame(n: float):
-        r = n / frame_max
+        r = 4*n / frame_max
         population[0] = 0.5
         paint(r)
         line.set_ydata(population)
@@ -41,7 +41,7 @@ def main():
         return (line, title)
 
     ani = FuncAnimation(fig, frame, range(frame_max // 2, frame_max), interval=100)
-    ani.save("logi.gif", fps=30, dpi=100)
+    ani.save("logi.gif", fps=30, dpi=300)
 
 
 if __name__ == "__main__":
