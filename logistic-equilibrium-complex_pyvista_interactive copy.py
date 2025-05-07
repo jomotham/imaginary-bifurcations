@@ -23,9 +23,9 @@ def paint(population, simulation_length):
             x_n = sim_arr[k % size]
 
             # quadratic map
-            c = 0.5 * 4 * (1 - 0.5 * r)
-            value = x_n**2 + c
-            # value = r * x_n * (1 - x_n)
+            # c = 0.5 * r * (1 - 0.5 * r)
+            # value = x_n**2 + c
+            value = r * x_n * (1 - x_n)
 
             sim_arr[(k + 1) % size] = value
 
@@ -41,16 +41,16 @@ def paint(population, simulation_length):
 class Parameters:
     simulation_length: int
     equilibrium_resolution: int
-    num_simulations: int
+    num_simulations: tuple[int, int]
     limits: tuple[complex, complex]
 
     @property
     def r_real(self):
-        return np.linspace(*np.real(self.limits), self.num_simulations)
+        return np.linspace(*np.real(self.limits), self.num_simulations[0])
 
     @property
     def r_imag(self):
-        return np.linspace(*np.imag(self.limits), self.num_simulations)
+        return np.linspace(*np.imag(self.limits), self.num_simulations[1])
 
 
 def create_buffer(params: Parameters):
@@ -98,7 +98,13 @@ def create_mesh(params: Parameters, population: np.ndarray):
     return mesh
 
 
-def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps: int):
+def run_simulations(
+    params: Parameters,
+    plotter: pv.Plotter,
+    id: str,
+    num_steps: int,
+    **kwargs,
+):
     population = create_buffer(params)
 
     for decimation in reversed(range(0, num_steps)):
@@ -118,10 +124,8 @@ def run_simulations(params: Parameters, plotter: pv.Plotter, id: str, num_steps:
         print("Inserting mesh")
         plotter.add_mesh(
             mesh,
-            scalars="height",
             name=f"mymesh{id}",  # pyvista will deduplicate meshes with the same name
-            cmap="gist_earth",
-            opacity=0.2,
+            **kwargs,
         )
 
         plotter.render()
@@ -135,7 +139,7 @@ def interactive():
     pl = BackgroundPlotter()
     pl.show_axes()
     pl.show_bounds(
-        location="back",
+        location="origin",
         xtitle="real",
         ytitle="imaginary",
         ztitle="equilibrium value",
@@ -158,11 +162,19 @@ def interactive():
         params = Parameters(
             simulation_length=5000,
             equilibrium_resolution=10,
-            num_simulations=1500,
+            num_simulations=(1500, 1500),
             limits=bounds,
         )
 
-        run_simulations(params, pl, "run3", num_steps=1)
+        run_simulations(
+            params,
+            pl,
+            "run3",
+            num_steps=1,
+            cmap="gist_earth",
+            opacity=0.2,
+            scalars="height",
+        )
 
         pl.fly_to(box.center)
 
@@ -171,6 +183,14 @@ def interactive():
         rotation_enabled=False,
         bounds=(-2, 4, -2, 2, -1, 1),
     )
+
+    params = Parameters(
+        simulation_length=8000,
+        equilibrium_resolution=50,
+        num_simulations=(1200, 1),
+        limits=((-2 + 0), (4 + 0)),
+    )
+    run_simulations(params, pl, "real", num_steps=1, color="black")
 
     print("Yielding to eventloop")
     pl.app.exec_()
@@ -185,14 +205,17 @@ def create_flying_gif():
     params = Parameters(
         simulation_length=8000,
         equilibrium_resolution=6,
-        num_simulations=2000,
+        num_simulations=(800, 800),
         limits=((-2 - 2j), (4 + 2j)),
     )
 
     run_simulations(params, pl, "base", num_steps=1)
 
-    # params.limits = ((3 - 0.5j), (4 + 0.5j))
-    # params.equilibrium_resolution = 50
+    params.limits = ((-2 + 0), (4 + 0))
+    params.equilibrium_resolution = 50
+    params.num_simulations = (800, 1)
+    run_simulations(params, pl, "real", num_steps=1, color="black")
+
     # run_simulations(params, pl, "run1", num_steps=3)
 
     # params.limits = ((3.8 - 0.1j), (3.9 + 0.1j))
@@ -202,9 +225,9 @@ def create_flying_gif():
     # pl.fly_to((np.real(center), np.imag(center), 1))
     # pl.fly_to((3.58355, 0, 0.9))
 
+    pl.camera.zoom("tight")
     pl.enable_parallel_projection()
     pl.remove_scalar_bar()
-    pl.zoom_camera("tight")
     pl.show_bounds(
         location="outer",
         xtitle="real",
@@ -213,20 +236,23 @@ def create_flying_gif():
         use_3d_text=False,
     )
 
+    print("Exporting scene")
+    pl.export_html("Figures/exported_scene.html")
+
     print("Creating gif")
 
     focus = [0, 0, 0]
     point = [4, 0, 0]
     viewup = [0, 0.1, 1]
 
-    angle = np.linspace(0, np.pi / 2, num=36)
+    angle = np.linspace(0, np.pi / 2, num=24)
     trajectory = 4 * np.stack(
         [np.zeros_like(angle), np.cos(angle), -np.sin(angle)], axis=1
     )
 
     print(trajectory)
 
-    pl.open_gif("orbit.gif")
+    pl.open_gif("Figures/bifurcation_to_mandelbrot_tilt.gif")
 
     pl.set_position(trajectory[0], render=False)
     pl.set_focus(focus, render=False)
