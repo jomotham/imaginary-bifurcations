@@ -24,8 +24,12 @@ def paint(population, simulation_length):
 
             # quadratic map
             # c = 0.5 * r * (1 - 0.5 * r)
-            # value = x_n**2 + c
-            value = r * x_n * (1 - x_n)
+            # z_n = r * (1 / 2 - x_n)
+            # z_n1 = z_n**2 + c
+            # value = 1 / 2 - z_n1 / r
+            value = x_n**2 + r
+
+            # value = r * x_n * (1 - x_n)
 
             sim_arr[(k + 1) % size] = value
 
@@ -110,7 +114,7 @@ def run_simulations(
     for decimation in reversed(range(0, num_steps)):
         # create a strided view of the list of coordinates
         decimated_population = population[:: 10**decimation]
-        decimated_population[..., 2, :] = 0.1
+        decimated_population[..., 2, :] = 0.5
 
         print("Calculating...")
         start_time = time.perf_counter()
@@ -177,6 +181,7 @@ def interactive():
         )
 
         pl.fly_to(box.center)
+        pl.camera.zoom(2)
 
     pl.add_box_widget(
         callback=bounds_callback,
@@ -209,12 +214,12 @@ def create_flying_gif():
         limits=((-2 - 2j), (4 + 2j)),
     )
 
-    run_simulations(params, pl, "base", num_steps=1)
+    run_simulations(params, pl, "base", num_steps=1, opacity=0.2)
 
     params.limits = ((-2 + 0), (4 + 0))
     params.equilibrium_resolution = 50
     params.num_simulations = (800, 1)
-    run_simulations(params, pl, "real", num_steps=1, color="black")
+    run_simulations(params, pl, "real", num_steps=1, opacity=0.5, color="black")
 
     # run_simulations(params, pl, "run1", num_steps=3)
 
@@ -225,8 +230,9 @@ def create_flying_gif():
     # pl.fly_to((np.real(center), np.imag(center), 1))
     # pl.fly_to((3.58355, 0, 0.9))
 
-    pl.camera.zoom("tight")
+    # pl.camera.zoom("tight")
     pl.enable_parallel_projection()
+    # pl.show_axes()
     pl.remove_scalar_bar()
     pl.show_bounds(
         location="outer",
@@ -243,11 +249,14 @@ def create_flying_gif():
 
     focus = [0, 0, 0]
     point = [4, 0, 0]
-    viewup = [0, 0.1, 1]
 
     angle = np.linspace(0, np.pi / 2, num=24)
-    trajectory = 4 * np.stack(
-        [np.zeros_like(angle), np.cos(angle), -np.sin(angle)], axis=1
+    trajectory = 1 * np.stack(
+        [np.zeros_like(angle), np.cos(angle), np.sin(angle)], axis=1
+    )
+
+    viewup_trajectory = np.stack(
+        [np.zeros_like(angle), -np.sin(angle), np.cos(angle)], axis=1
     )
 
     print(trajectory)
@@ -256,12 +265,12 @@ def create_flying_gif():
 
     pl.set_position(trajectory[0], render=False)
     pl.set_focus(focus, render=False)
-    pl.set_viewup(viewup)
+    pl.set_viewup(viewup_trajectory[0])
 
     for _ in range(10):
         pl.write_frame()
 
-    for point in trajectory:
+    for point, viewup in zip(trajectory, viewup_trajectory):
         print(point)
         pl.set_position(point, render=False)
         pl.set_focus(focus, render=False)
