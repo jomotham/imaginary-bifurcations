@@ -7,7 +7,7 @@ import pyvista as pv
 simulation_length = 5000
 
 equilibrium_resolution = 500
-num_simulations = 1000
+num_simulations = 100
 
 population = np.zeros(
     dtype=np.complex64, shape=(num_simulations, num_simulations, equilibrium_resolution)
@@ -44,7 +44,7 @@ def main():
 
     fig, ax = plt.subplots()
 
-    #print(population[:, 450, 0])
+    # print(population[:, 450, 0])
 
     image = ax.matshow(np.abs(population[:, :, 0]))
 
@@ -56,7 +56,7 @@ def main():
     ani = FuncAnimation(
         fig, frame, range(1, equilibrium_resolution), interval=100, blit=True
     )
-    ani.save("slice1.gif", fps=30, dpi=100)
+    ani.save("slice_top_down_view.gif", fps=30, dpi=100)
 
     pl = pv.Plotter()
     pl.show_axes()
