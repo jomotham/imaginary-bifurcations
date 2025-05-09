@@ -213,7 +213,7 @@ def create_flying_gif():
     params = Parameters(
         simulation_length=8000,
         equilibrium_resolution=6,
-        num_simulations=(800, 800),
+        num_simulations=(1800, 1800),
         limits=((-2 - 2j), (4 + 2j)),
     )
 
@@ -239,7 +239,7 @@ def create_flying_gif():
 
     params.limits = ((-2 + 0), (4 + 0))
     params.equilibrium_resolution = 50
-    params.num_simulations = (800, 1)
+    params.num_simulations = (1800, 1)
     run_simulations(
         params,
         pl,
