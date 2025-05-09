@@ -14,10 +14,11 @@ ti.init(arch=ti.gpu)
 n = 100
 population = ti.field(dtype=ti.f32, shape=(n,))
 
+#1eq: 2.80
+#2eq: 3.02
+#4eq: 3.48
+
 r = 3.48
-#0.7
-#0.755
-#0.87
 
 @ti.kernel
 def paint(r: float):
@@ -40,10 +41,6 @@ def main():
     ax.set_ylabel("Population Proportion")
     ax.set_title(f"Logistic Map with $r={r}$")
     ax.legend()
-    
-    #plt.yticks(np.linspace(0.5, 0.7, 5))
-    #ax.set_xscale("log")
-
 
     #plt.axhline(0.6428, c="gray", ls = ":")
 
