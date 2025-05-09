@@ -59,7 +59,7 @@ def main():
             line.set_ydata(np.abs(population[:, n, i]))
         ax.autoscale(True)
         title = ax.set_title(
-            f"$\\mathrm{{im}}(r) = {'{:.4f}'.format(r_im[n])}$"
+            f"$\\mathrm{{Im}}(r) = {'{:.4f}'.format(r_im[n])}$"
         )  # update the plot title
         return (line, title)  # return the Artists that have changed
 
