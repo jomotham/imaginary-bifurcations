@@ -24,15 +24,15 @@ def paint(population, simulation_length):
             x_n = sim_arr[k % size]
 
             # quadratic map
-            c = 0.5 * r * (1 - 0.5 * r)
+            # c = 0.5 * r * (1 - 0.5 * r)
             # z_n = r * (1 / 2 - x_n)
             # z_n1 = z_n**2 + c
             # value = 1 / 2 - z_n1 / r
             # value = x_n**2 + r
-            value = x_n**2 + c
+            # value = x_n**2 + c
 
             # logistic map
-            # value = r * x_n * (1 - x_n)
+            value = r * x_n * (1 - x_n)
 
             sim_arr[(k + 1) % size] = value
 
@@ -314,5 +314,5 @@ def create_flying_gif():
 
 
 if __name__ == "__main__":
-    create_flying_gif()
-    # interactive()
+    # create_flying_gif()
+    interactive()

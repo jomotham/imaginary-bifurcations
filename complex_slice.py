@@ -3,11 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-plt.rcParams.update({
-    "mathtext.default": "it",
-    "mathtext.fontset": "cm",
-    "font.family": "Ebrima",
-})
+plt.rcParams.update(
+    {
+        "mathtext.default": "it",
+        "mathtext.fontset": "cm",
+        "font.family": "Ebrima",
+    }
+)
 
 simulation_length = 10_000
 
